@@ -1,8 +1,9 @@
-<div class="row">
+<!-- <div class="row">
     <div *ngIf="error" class=" col-xs-6 alert alert-danger">
         <h3>{{error}}</h3>
     </div>
-</div>
+</div> -->
+<app-alert *ngIf="error" [message]="error" (close)="onHandleClose()"></app-alert>
 <div *ngIf="!isLoading" class="row">
     <div class="col-xs-12">
         <form (ngSubmit)="onSubmit(f)" #f="ngForm">

@@ -17,11 +17,12 @@ export interface authResponseData {
     providedIn: 'root'
 })
 export class AuthService {
-    userSubject = new BehaviorSubject<User|any>(null);
-    
+    userSubject = new BehaviorSubject<User | any>(null);
+    private tokenExpirationTimer:any;
+
 
     constructor(private http: HttpClient,
-        private router:Router) { }
+        private router: Router) { }
 
     signup(email: string, password: string) {
         return this.http.post<authResponseData>(
@@ -36,7 +37,7 @@ export class AuthService {
                 this.handleAuthentication(responseData.email,
                     responseData.localId,
                     responseData.idToken,
-                    responseData.expiresIn)
+                    + responseData.expiresIn)
             }))
     }
 
@@ -53,15 +54,49 @@ export class AuthService {
                 this.handleAuthentication(responseData.email,
                     responseData.localId,
                     responseData.idToken,
-                    responseData.expiresIn)
+                    +responseData.expiresIn)
             }))
     }
 
-    logout(){
+    logout() {
         this.userSubject.next(null);
+        localStorage.removeItem('userData');
         this.router.navigate(['./auth'])
+        if(this.tokenExpirationTimer){
+            clearTimeout(this.tokenExpirationTimer)
+        }
+        this.tokenExpirationTimer = null;
     }
 
+    autoLogin() {
+        const userData: {
+            email: string,
+            id: string,
+            _token: string,
+            _expirationDate: string
+        } = JSON.parse(localStorage.getItem('userData')|| '{}')
+        if (!userData) {
+            return;
+        }
+
+        const loadedUser = new User(
+            userData.email,
+            userData.id,
+            userData._token,
+            new Date(userData._expirationDate)
+        )
+
+        if(loadedUser.token){  
+            this.userSubject.next(loadedUser);
+            
+        }
+    }
+
+    autoLogout(expirationDuration:number){
+            this.tokenExpirationTimer= setTimeout(() => {
+                this.logout();
+            }, expirationDuration);
+    }
 
     private handleError(error: HttpErrorResponse) {
         let errorMes = 'An unknown error occurred!';
@@ -83,7 +118,7 @@ export class AuthService {
         email: string,
         id: string,
         token: string,
-        expiresIn: string
+        expiresIn: number
     ) {
         const expirationDate = new Date(new Date().getTime() + +expiresIn * 1000);
         const user = new User(
@@ -93,5 +128,7 @@ export class AuthService {
             expirationDate)
 
         this.userSubject.next(user);
+        this.autoLogout(expiresIn * 1000)
+        localStorage.setItem('userData', JSON.stringify(user))
     }
 }

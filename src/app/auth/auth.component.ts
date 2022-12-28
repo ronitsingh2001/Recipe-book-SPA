@@ -3,6 +3,8 @@ import { NgForm } from "@angular/forms";
 import { Router } from "@angular/router";
 import { Observable } from "rxjs";
 import { authResponseData, AuthService } from "./auth.service";
+import { AlertComponent } from '../shared/alert/alert.component'
+
 
 @Component({
     selector: 'app-auth',
@@ -24,6 +26,14 @@ export class AuthComponent implements OnInit {
 
     onSwitchMode() {
         this.isLoginMode = !this.isLoginMode;
+    }
+
+    onHandleClose(){
+        this.error=null 
+    }
+
+    private showErrorAlert(error:string){
+
     }
 
     onSubmit(form: NgForm) {
@@ -48,6 +58,7 @@ export class AuthComponent implements OnInit {
         }, error => {
             this.isLoading = false;
             this.error = error;
+            this.showErrorAlert(this.error);
         })
 
         form.reset()
